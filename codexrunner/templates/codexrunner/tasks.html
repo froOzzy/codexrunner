@@ -1,0 +1,39 @@
+{% extends 'codexrunner/base.html' %}
+{% load static %}
+{% load codexrunner_extras %}
+{% block title %}Задачи из категории {{category.name}}{% endblock %}
+{% block content %}
+    <div class="container-fluid p-5">
+        {% if not tasks %}
+            <div class="row text-center">
+                <h1>Задачи не найдены</h1>
+            </div>
+        {% else %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'categories_view' %}">Категории</a></li>
+                    <li class="breadcrumb-item active">{{ category.name }}</li>
+                </ol>
+            </nav>
+            {% for task in tasks %}
+                <div class="row mt-5">
+                    <div class="d-flex position-relative border border-light rounded bg-light">
+                        <div class="p-5">
+                            <h3 class="mt-0">{{ task.name }}</h3>
+                            <p>{{ task.description }}</p>
+                            <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#{{ task.slug }}" aria-expanded="false" aria-controls="{{ task.slug }}">Подробнее</button>
+                            <a class="text-center bg-light" href="{% url 'solving_the_task_view' category_name=category.slug task_name=task.slug %}">
+                                <button class="btn btn-success">Попробовать решить</button>
+                            </a>
+                            <div class="collapse mt-3" id="{{ task.slug }}">
+                                <div class="card card-body border-0 bg-transparent">
+                                    {{ task.task_text | markdown | safe }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+	</div>
+{% endblock %}

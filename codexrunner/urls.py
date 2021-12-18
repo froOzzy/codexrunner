@@ -1,10 +1,18 @@
 from django.urls import path
 
-from codexrunner.views import get_the_tasks, get_the_categories, solving_the_task
+from codexrunner.views import (
+    solving_the_task_view,
+    categories_view,
+    tasks_view,
+    run_code,
+    get_code_result,
+)
 
 
 urlpatterns = [
-    path('codexrunner/api/v1/models/task/', get_the_tasks, name='get_the_tasks'),
-    path('codexrunner/api/v1/models/category/', get_the_categories, name='get_the_categories'),
-    path('', solving_the_task, name='solving_the_task'),
+    path('codexrunner/api/v1/code/run/', run_code, name='run_code'),
+    path('codexrunner/api/v1/code/result/', get_code_result, name='get_code_result'),
+    path('category/<str:category_name>/task/<str:task_name>/', solving_the_task_view, name='solving_the_task_view'),
+    path('category/', categories_view, name='categories_view'),
+    path('category/<str:category_name>/task/', tasks_view, name='tasks_view'),
 ]
