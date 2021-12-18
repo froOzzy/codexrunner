@@ -20,6 +20,7 @@ class TaskCategory(DateTimeMixin):
 
     name = models.CharField(max_length=200, verbose_name='Название категории')
     slug = models.CharField(max_length=200, editable=False)
+    description = models.TextField(max_length=1000, verbose_name='Описание категории')
 
     class Meta:
         """Метакласс"""
@@ -43,6 +44,7 @@ class Task(DateTimeMixin):
     name = models.CharField(max_length=200, verbose_name='Название задачи')
     slug = models.CharField(max_length=200, editable=False)
     category = models.ForeignKey(TaskCategory, on_delete=models.CASCADE, verbose_name='Категория')
+    description = models.TextField(max_length=1000, verbose_name='Описание задачи')
     task_text = models.TextField(max_length=50000, verbose_name='Текст задания в формате markdown/html')
     text_code_of_testing = models.TextField(
         max_length=50000,

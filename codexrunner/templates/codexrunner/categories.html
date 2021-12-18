@@ -1,0 +1,26 @@
+{% extends 'codexrunner/base.html' %}
+{% load static %}
+{% block title %}Категории задач{% endblock %}
+{% block content %}
+    <div class="container-fluid p-5">
+        {% if not categories %}
+            <div class="row text-center">
+                <h1>Категории не найдены</h1>
+            </div>
+        {% else %}
+            {% for category in categories %}
+                <div class="row mt-5">
+                    <div class="d-flex position-relative border border-light rounded bg-light">
+                        <div class="p-5">
+                            <h3 class="mt-0">{{ category.name }}</h3>
+                            <p>{{ category.description }}</p>
+                            <a href="{% url 'tasks_view' category_name=category.slug %}">
+                                <button class="btn btn-secondary">Перейти к задачам</button>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+	</div>
+{% endblock %}
