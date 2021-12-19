@@ -25,4 +25,5 @@ class Command(BaseCommand):
         if not image_name:
             image_name = DEFAULT_SETTINGS['IMAGE']['NAME']
 
-        subprocess.run(['docker', 'build', '-f', dockerfile_path, dockerfile_path, '--tag', image_name])
+        subprocess.run(['cd', dockerfile_path])
+        subprocess.run(['docker', 'build', dockerfile_path, '--tag', image_name])
