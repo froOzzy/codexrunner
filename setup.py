@@ -26,6 +26,7 @@ setup(
         'Markdown>=3.3.6',
         'django-rq>=2.5.1',
         'docker>=5.0.3',
-    ]
+    ],
+    include_package_data=True,
 )
 
