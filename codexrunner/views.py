@@ -54,7 +54,7 @@ def solving_the_task_view(request, category_name, task_name):
 def categories_view(request):
     """Страница категорий задач"""
     context = {
-        'categories': TaskCategory.objects.all(),
+        'categories': TaskCategory.objects.prefetch_related('task_set').filter(task__in=request.codexrunner_user.tasks.all()),
     }
     return render(request, 'codexrunner/categories.html', context=context)
 
@@ -63,9 +63,10 @@ def categories_view(request):
 @authorization
 def tasks_view(request, category_name):
     """Страница задач"""
-    category = TaskCategory.objects.filter(slug=category_name).first()
+    tasks = request.codexrunner_user.tasks.all()
+    category = TaskCategory.objects.prefetch_related('task_set').filter(task__in=tasks, slug=category_name).first()
     context = {
-        'tasks': Task.objects.filter(category=category),
+        'tasks': tasks,
         'category': category,
     }
     return render(request, 'codexrunner/tasks.html', context=context)
@@ -83,7 +84,7 @@ def run_code(request):
     if not task_name:
         return JsonResponse(status=400, data={'message': 'Не задано название задачи!'})
 
-    task = Task.objects.filter(slug=task_name).first()
+    task = request.codexrunner_user.tasks.filter(slug=task_name).first()
     if not task:
         return JsonResponse(status=400, data={'message': 'Задача не найдена!'})
 

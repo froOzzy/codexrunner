@@ -90,6 +90,7 @@ class User(DateTimeMixin):
     username = models.CharField(unique=True, verbose_name='Логин', max_length=200)
     password = models.CharField(verbose_name='Пароль', max_length=128)
     is_active = models.BooleanField(default=True, verbose_name='Активность пользователя')
+    tasks = models.ManyToManyField(Task, verbose_name='Доступные задания', blank=True)
 
     class Meta:
         """Метакласс"""
@@ -130,3 +131,4 @@ class UserRunTask(DateTimeMixin):
     def __str__(self):
         """Отображение как строка"""
         return str(self.job_id)
+
