@@ -1,21 +1,40 @@
 import uuid
 import time
+import json
+import hashlib
 
 from django.views.decorators.http import require_GET, require_POST
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.cache import cache
 
-from rq import Queue
+import django_rq
 
-from codexrunner.models import Task, TaskCategory
+from codexrunner.models import Task, TaskCategory, User, UserRunTask
 from codexrunner.docker import start_container_of_parsing
-from codexrunner.settings import SETTINGS
+from codexrunner.settings import SETTINGS, RESULT_JOB_ID
 from codexrunner.redis_pool import redis_connection
 
 
+def authorization(function):
+    """Декоратор для проверки авторизации"""
+    def wrapper(*args, **kwargs):
+        """Проверка всех требований"""
+        request = args[0]
+        session_id = request.COOKIES.get('session-codexrunner-id')
+        user = cache.get(session_id)
+        if user:
+            setattr(request, 'codexrunner_user', user)
+            return function(*args, **kwargs)
+
+        return redirect('login_view')
+
+    return wrapper
+
+
 @require_GET
+@authorization
 def solving_the_task_view(request, category_name, task_name):
     """Страница решения задачи"""
     category = TaskCategory.objects.filter(slug=category_name).first()
@@ -25,11 +44,13 @@ def solving_the_task_view(request, category_name, task_name):
         'category': category,
         'run_code_url': reverse('run_code'),
         'get_code_result_url': reverse('get_code_result'),
+        'timeout_refresh_result': task.timeout_refresh_result,
     }
     return render(request, 'codexrunner/solving_task.html', context=context)
 
 
 @require_GET
+@authorization
 def categories_view(request):
     """Страница категорий задач"""
     context = {
@@ -39,6 +60,7 @@ def categories_view(request):
 
 
 @require_GET
+@authorization
 def tasks_view(request, category_name):
     """Страница задач"""
     category = TaskCategory.objects.filter(slug=category_name).first()
@@ -50,6 +72,7 @@ def tasks_view(request, category_name):
 
 
 @require_POST
+@authorization
 def run_code(request):
     """Метод для запуска кода на прогон через раннер"""
     text_code = request.POST.get('text_code')
@@ -65,19 +88,29 @@ def run_code(request):
         return JsonResponse(status=400, data={'message': 'Задача не найдена!'})
 
     try:
-        queue = Queue(SETTINGS['RQ']['QUEUE_NAME'], default_timeout=35, connection=redis_connection())
+        queue = django_rq.get_queue(
+            SETTINGS['RQ']['QUEUE_NAME'],
+            default_timeout=task.timeout_running_container + 10,
+            connection=redis_connection()
+        )
         job_id = str(uuid.uuid4())
         params = {
             'f': start_container_of_parsing,
             'kwargs': {
                 'answer_code': text_code,
                 'test_code': task.text_code_of_testing,
-                'run_timeout': 30,
+                'run_timeout': task.timeout_running_container,
+                'job_id': job_id,
             },
             'job_id': job_id,
         }
-        job = queue.enqueue(**params)
-        cache.set('codexrunner_job_{}'.format(job_id), job)
+        queue.enqueue(**params)
+        UserRunTask.objects.create(
+            job_id=job_id,
+            user=request.codexrunner_user,
+            task=task,
+            code=text_code,
+        )
     except Exception as error:
         print(error)
         return JsonResponse(status=400, data={'message': 'Неудалось запустить задачу в очереди!'})
@@ -86,14 +119,45 @@ def run_code(request):
 
 
 @require_GET
+@authorization
 def get_code_result(request):
     """Метод для получения результата выполнения кода"""
     job_id = request.GET.get('job_id')
     if not job_id:
         return JsonResponse(status=400, data={'message': 'Не найден job_id!'})
 
-    job = cache.get('codexrunner_job_{}'.format(job_id))
-    if not job:
-        return JsonResponse(status=400, data={'message': 'Задача не найдена!'})
+    r_con = redis_connection()
+    message_log = r_con.get(RESULT_JOB_ID.format(job_id))
+    if not message_log:
+        return JsonResponse(status=400, data={'message': 'Результат проверки не найден!'})
 
-    return JsonResponse(status=200, data={'message': job.result})
+    data = json.loads(message_log)
+    return JsonResponse(status=200, data=data)
+
+
+def login_view(request):
+    """Страница для авторизации"""
+    if request.method == 'GET':
+        return render(request, 'codexrunner/login.html')
+
+    if request.method == 'POST':
+        login = request.POST.get('login')
+        password = request.POST.get('password')
+        if not login or not password:
+            return render(request, 'codexrunner/login.html', context={'error_message': 'Логин или пароль не найден!'})
+
+        password = hashlib.blake2b(password.encode()).hexdigest()
+        user = User.objects.filter(username=login, password=password).first()
+        if not user:
+            return render(request, 'codexrunner/login.html', context={'error_message': 'Неверный логин или пароль.'})
+
+        if not user.is_active:
+            return render(request, 'codexrunner/login.html', context={'error_message': 'Пользователь неактивен.'})
+
+        session_id = '{}:{}'.format(str(uuid.uuid4()), password)
+        cache.set(session_id, user, 12 * 60 * 60)
+        response = redirect('categories_view')
+        response.set_cookie('session-codexrunner-id', session_id)
+        return response
+
+    return HttpResponse(status=400)

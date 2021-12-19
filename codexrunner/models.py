@@ -1,4 +1,7 @@
+import hashlib
+
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 from codexrunner.slug import slugify
 
@@ -54,6 +57,16 @@ class Task(DateTimeMixin):
         max_length=50000,
         verbose_name='Текст кода примера, который будет выведен как патерн выполнения задачи',
     )
+    timeout_running_container = models.IntegerField(
+        verbose_name='Таймаут для запуска контейнера',
+        default=30,
+        validators=[MaxValueValidator(10000), MinValueValidator(0)],
+    )
+    timeout_refresh_result = models.IntegerField(
+        verbose_name='Таймаут на получение результата проверки',
+        default=30,
+        validators=[MaxValueValidator(10000), MinValueValidator(0)],
+    )
 
     class Meta:
         """Метакласс"""
@@ -69,3 +82,51 @@ class Task(DateTimeMixin):
         """Метод сохранения объекта"""
         self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+
+class User(DateTimeMixin):
+    """Модель пользователей"""
+
+    username = models.CharField(unique=True, verbose_name='Логин', max_length=200)
+    password = models.CharField(verbose_name='Пароль', max_length=128)
+    is_active = models.BooleanField(default=True, verbose_name='Активность пользователя')
+
+    class Meta:
+        """Метакласс"""
+
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
+
+    def __str__(self):
+        """Отображение как строка"""
+        return self.username
+
+    def save(self, *args, **kwargs):
+        """Метод сохранения объекта"""
+        if getattr(self, 'id', None):
+            user = User.objects.get(id=self.id)
+            if user.password != self.password:
+                self.password = hashlib.blake2b(self.password.encode()).hexdigest()
+        else:
+            self.password = hashlib.blake2b(self.password.encode()).hexdigest()
+
+        super().save(*args, **kwargs)
+
+
+class UserRunTask(DateTimeMixin):
+    """Модель для хранения истории запуска кода"""
+
+    job_id = models.UUIDField(editable=False, verbose_name='Идентификатор задачи')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Пользователь')
+    task = models.ForeignKey(Task, on_delete=models.CASCADE, verbose_name='Задача')
+    code = models.TextField(max_length=50000, verbose_name='Код пользователя')
+
+    class Meta:
+        """Метакласс"""
+
+        verbose_name = 'Код решения задачи'
+        verbose_name_plural = 'Код решения задач'
+
+    def __str__(self):
+        """Отображение как строка"""
+        return str(self.job_id)

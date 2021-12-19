@@ -81,27 +81,47 @@
                     },
                     dataType: 'json',
                     success: function(data, textStatus, jqXHR) {
-                        sleep(30000);
-                         $.ajax({
-                            type: 'GET',
-                            url: "{{ get_code_result }}",
-                            data: {
-                                job_id: data.job_id,
-                                csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
-                            },
-                            dataType: 'json',
-                            success: function(data, textStatus, jqXHR) {
-                                alert(data);
-                            }
-                        });
-                        button.prop('disabled', false);
-                        button.html('Проверить');
+                         setTimeout(function () {
+                            $.ajax({
+                                type: 'GET',
+                                url: "{{ get_code_result_url }}",
+                                data: {
+                                    job_id: data.job_id,
+                                    csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
+                                },
+                                dataType: 'json',
+                                success: function(data, textStatus, jqXHR) {
+                                    button.prop('disabled', false);
+                                    button.html('Проверить');
+                                    var reponse_json = jQuery.parseJSON(jqXHR.responseText);
+                                    $("#nav-cli-output").html('');
+                                    $.each(reponse_json, function(key, value) {
+                                        $("#nav-cli-output").append('<p><b>' + key + '</b></p>')
+                                        if (value.length === 0) {
+                                            $("#nav-cli-output").append('<p>Все тесты пройдены!</p>');
+                                        } else {
+                                            for (let i = 0; i < value.length; i++) {
+                                                $("#nav-cli-output").append('<p><pre>' + value[i] + '</pre></p>');
+                                            }
+                                        }
+                                    });
+                                },
+                                error: function (jqXHR, exception) {
+                                    button.prop('disabled', false);
+                                    button.html('Проверить');
+                                    var reponse_json = jQuery.parseJSON(jqXHR.responseText);
+                                    $("#nav-cli-output").html(reponse_json.message);
+                                }
+                            });
+                            button.prop('disabled', false);
+                            button.html('Проверить');
+                         }, {{ timeout_refresh_result }} * 1000);
                     },
                     error: function (jqXHR, exception) {
                         button.prop('disabled', false);
                         button.html('Проверить');
-                        console.log(jqXHR.responseText);
-                        $("#nav-cli-output").html(jqXHR.responseText);
+                        var reponse_json = jQuery.parseJSON(jqXHR.responseText);
+                        $("#nav-cli-output").html(reponse_json.message);
                     }
                 });
             });
