@@ -1,12 +1,16 @@
+import os
+
 from django.conf import settings
 
 
+absolute_path = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_SETTINGS = {
     'IMAGE': {
         'NAME': 'codexrunner_image',
-        'DOCKERFILE_PATH': 'codexrunner/runner/',
+        'DOCKERFILE_PATH': absolute_path + '/runner/',
+        'RUNNER_PATH': absolute_path + '/runner/image/cli_runner.py',
         'CONTAINER_WORKDIR': '/cli/',
-        'PYPROJECT_TOML_PATH': '/runner/image/pyproject.toml',
+        'PYPROJECT_TOML_PATH': absolute_path + '/runner/image/pyproject.toml',
     },
     'STAGES': [
         ('flakehell', 'python3 -m flakehell lint answer.py --format=gitlab --output-file flakehell.json'),

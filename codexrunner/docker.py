@@ -1,4 +1,3 @@
-import os
 import tarfile
 import tempfile
 import time
@@ -88,11 +87,10 @@ def start_container_of_parsing(
             tty=True,
             auto_remove=False,
         )
-        absolute_path = os.path.dirname(os.path.abspath(__file__))
-        with open(absolute_path + '/runner/image/cli_runner.py') as file:
+        with open(SETTINGS['IMAGE']['RUNNER_PATH']) as file:
             runner = file.read()
 
-        with open(absolute_path + SETTINGS['IMAGE']['PYPROJECT_TOML_PATH']) as file:
+        with open(SETTINGS['IMAGE']['PYPROJECT_TOML_PATH']) as file:
             pyproject_toml = file.read()
 
         copy_to_docker(container, container_path, 'answer.py', answer_code)
