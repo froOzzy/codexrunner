@@ -22,7 +22,7 @@ def authorization(function):
     def wrapper(*args, **kwargs):
         """Проверка всех требований"""
         request = args[0]
-        session_id = request.COOKIES.get('session-codexrunner-id')
+        session_id = request.session.get('codexrunner_session_id')
         user = cache.get(session_id)
         if user:
             setattr(request, 'codexrunner_user', user)
@@ -54,7 +54,9 @@ def solving_the_task_view(request, category_name, task_name):
 def categories_view(request):
     """Страница категорий задач"""
     context = {
-        'categories': TaskCategory.objects.prefetch_related('task_set').filter(task__in=request.codexrunner_user.tasks.all()),
+        'categories': TaskCategory.objects.prefetch_related('task_set').filter(
+            task__in=request.codexrunner_user.tasks.all(),
+        ),
     }
     return render(request, 'codexrunner/categories.html', context=context)
 
@@ -155,10 +157,15 @@ def login_view(request):
         if not user.is_active:
             return render(request, 'codexrunner/login.html', context={'error_message': 'Пользователь неактивен.'})
 
-        session_id = '{}:{}'.format(str(uuid.uuid4()), password)
+        session_id = str(uuid.uuid4())
+        request.session['codexrunner_session_id'] = session_id
         cache.set(session_id, user, 12 * 60 * 60)
-        response = redirect('categories_view')
-        response.set_cookie('session-codexrunner-id', session_id)
-        return response
+        return redirect('categories_view')
 
     return HttpResponse(status=400)
+
+
+def logout_view(request):
+    """Страница для выхода пользователя"""
+    del request.session['codexrunner_session_id']
+    return redirect('login_view')

@@ -7,6 +7,7 @@ from codexrunner.views import (
     run_code,
     get_code_result,
     login_view,
+    logout_view,
 )
 
 
@@ -17,4 +18,5 @@ urlpatterns = [
     path('category/', categories_view, name='categories_view'),
     path('category/<str:category_name>/task/', tasks_view, name='tasks_view'),
     path('login/', login_view, name='login_view'),
+    path('logout/', logout_view, name='logout_view'),
 ]

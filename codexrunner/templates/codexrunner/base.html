@@ -1,20 +1,33 @@
 {% load static %}
+{% load codexrunner_extras %}
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %}</title>
-    <link href="{% static 'codexrunner/bootstrap5/bootstrap.min.css' %}" rel="stylesheet">
-    {% block custom_css %}
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}{% endblock %}</title>
+        <link href="{% static 'codexrunner/bootstrap5/bootstrap.min.css' %}" rel="stylesheet">
+        {% block custom_css %}
+        {% endblock %}
+    </head>
+    <body>
+        {% if request.session.codexrunner_session_id %}
+            <nav class="navbar navbar-light bg-light">
+                <div class="container-fluid justify-content-end">
+                    <form class="d-flex">
+                        <div class="progress align-self-center" style="width: 150px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">25%</div>
+                        </div>
+                        <a class="ms-3 me-4" href="{% url 'logout_view' %}">Выход</a>
+                    </form>
+                </div>
+            </nav>
+        {% endif %}
+        {% block content %}
+        {% endblock %}
+    </body>
+    <script src="{% static 'codexrunner/bootstrap5/bootstrap.min.js' %}"></script>
+    <script src="{% static 'codexrunner/jquery/jquery-3.6.0.min.js' %}"></script>
+    {% block custom_js %}
     {% endblock %}
-</head>
-<body>
-  {% block content %}
-  {% endblock %}
-</body>
-  <script src="{% static 'codexrunner/bootstrap5/bootstrap.min.js' %}"></script>
-  <script src="{% static 'codexrunner/jquery/jquery-3.6.0.min.js' %}"></script>
-  {% block custom_js %}
-  {% endblock %}
 </html>
