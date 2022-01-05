@@ -11,15 +11,14 @@
         {% endblock %}
     </head>
     <body>
-        {% if request.session.codexrunner_session_id %}
+        {% if request.codexrunner_user %}
             <nav class="navbar navbar-light bg-light">
                 <div class="container-fluid justify-content-end">
-                    <form class="d-flex">
-                        <div class="progress align-self-center" style="width: 150px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100">25%</div>
-                        </div>
-                        <a class="ms-3 me-4" href="{% url 'logout_view' %}">Выход</a>
-                    </form>
+                    <span class="me-3">Прогресс:</span>
+                    <div class="progress align-self-center me-3" style="width: 150px;">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ request.codexrunner_user_progress_of_completed_tasks }}%;" aria-valuenow="{{ request.codexrunner_user_progress_of_completed_tasks }}" aria-valuemin="0" aria-valuemax="100">{{ request.codexrunner_user_progress_of_completed_tasks }}%</div>
+                    </div>
+                    <a class="me-4" href="{% url 'logout_view' %}">Выход</a>
                 </div>
             </nav>
         {% endif %}

@@ -2,5 +2,6 @@ recursive-include codexrunner/templates/codexrunner *.html
 recursive-include codexrunner/static/codexrunner/bootstrap5 *
 recursive-include codexrunner/static/codexrunner/codemirror *
 recursive-include codexrunner/static/codexrunner/jquery *
+recursive-include codexrunner/static/codexrunner/images *
 recursive-include codexrunner/runner Dockerfile
 recursive-include codexrunner/runner/image *

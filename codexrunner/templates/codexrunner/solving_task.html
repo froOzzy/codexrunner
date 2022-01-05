@@ -7,50 +7,56 @@
 {% endblock %}
 {% block content %}
     <div class="container-fluid p-5">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="{% url 'categories_view' %}">Категории</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'tasks_view' category_name=category.slug %}">{{ category.name }}</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{ task.name }}</li>
-            </ol>
-        </nav>
-        <div class="row">
-            <div class="col-md-6 hr-100">
-                <nav>
-                    <div class="nav nav-tabs" id="nav-task-and-output-tabs" role="tablist">
-                        <button class="nav-link active" id="nav-task-tab" data-bs-toggle="tab" data-bs-target="#nav-task" type="button" role="tab" aria-controls="nav-tasl" aria-selected="true">Задание</button>
-                        <button class="nav-link" id="nav-cli-output-tab" data-bs-toggle="tab" data-bs-target="#nav-cli-output" type="button" role="tab" aria-controls="nav-cli-output" aria-selected="false">Вывод</button>
+        {% if task %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'categories_view' %}">Категории</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'tasks_view' category_name=category.slug %}">{{ category.name }}</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ task.name }}</li>
+                </ol>
+            </nav>
+            <div class="row">
+                <div class="col-md-6 hr-100">
+                    <nav>
+                        <div class="nav nav-tabs" id="nav-task-and-output-tabs" role="tablist">
+                            <button class="nav-link active" id="nav-task-tab" data-bs-toggle="tab" data-bs-target="#nav-task" type="button" role="tab" aria-controls="nav-tasl" aria-selected="true">Задание</button>
+                            <button class="nav-link" id="nav-cli-output-tab" data-bs-toggle="tab" data-bs-target="#nav-cli-output" type="button" role="tab" aria-controls="nav-cli-output" aria-selected="false">Вывод</button>
+                        </div>
+                    </nav>
+                    <div class="tab-content" id="nav-input-tab-content">
+                        <div class="tab-pane fade show active p-5" id="nav-task" role="tabpanel" aria-labelledby="nav-task-tab">
+                            {{ task.task_text | markdown | safe }}
+                        </div>
+                        <div class="tab-pane fade p-5" id="nav-cli-output" role="tabpanel" aria-labelledby="nav-cli-output-tab">
+                            Пока здесь пусто...
+                        </div>
                     </div>
-                </nav>
-                <div class="tab-content" id="nav-input-tab-content">
-                    <div class="tab-pane fade show active p-5" id="nav-task" role="tabpanel" aria-labelledby="nav-task-tab">
-                        {{ task.task_text | markdown | safe }}
-                    </div>
-                    <div class="tab-pane fade p-5" id="nav-cli-output" role="tabpanel" aria-labelledby="nav-cli-output-tab">
-                        Пока здесь пусто...
+                </div>
+                <div class="col-md-6 hr-100">
+                    <nav>
+                        <div class="nav nav-tabs" id="nav-solving-tabs" role="tablist">
+                            <div class="col">
+                                <button class="nav-link active" id="nav-solving-tab" data-bs-toggle="tab" data-bs-target="#nav-solving" type="button" role="tab" aria-controls="nav-solving" aria-selected="true">Решение</button>
+                            </div>
+                            <div class="col">
+                                <button id="run-code" class="btn btn-success float-end">Проверить</button>
+                            </div>
+                        </div>
+                    </nav>
+                    <div class="tab-content h-100" id="nav-solving-tab-content">
+                        <div class="tab-pane fade show active h-100" id="nav-solving" role="tabpanel" aria-labelledby="nav-solving-tab">
+                            {% csrf_token %}
+                            <textarea id="editor" class="editor vh-100"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 hr-100">
-                <nav>
-                    <div class="nav nav-tabs" id="nav-solving-tabs" role="tablist">
-                        <div class="col">
-                            <button class="nav-link active" id="nav-solving-tab" data-bs-toggle="tab" data-bs-target="#nav-solving" type="button" role="tab" aria-controls="nav-solving" aria-selected="true">Решение</button>
-                        </div>
-                        <div class="col">
-                            <button id="run-code" class="btn btn-success float-end">Проверить</button>
-                        </div>
-                    </div>
-                </nav>
-                <div class="tab-content h-100" id="nav-solving-tab-content">
-                    <div class="tab-pane fade show active h-100" id="nav-solving" role="tabpanel" aria-labelledby="nav-solving-tab">
-                        {% csrf_token %}
-                        <textarea id="editor" class="editor vh-100"></textarea>
-                    </div>
-                </div>
-			</div>
-		</div>
-	</div>
+        {% else %}
+            <div class="row text-center">
+                <h1>Задача не найдена!</h1>
+            </div>
+        {% endif %}
+    </div>
 {% endblock %}
 {% block custom_js %}
     <script src="{% static 'codexrunner/codemirror/codemirror.min.js' %}"></script>

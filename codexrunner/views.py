@@ -25,7 +25,16 @@ def authorization(function):
         session_id = request.session.get('codexrunner_session_id')
         user = cache.get(session_id)
         if user:
+            user_progress_of_completed_tasks = 0
+            user_tasks = user.tasks.all()
+            user_completed_tasks = user.completed_tasks.all()
+            if user.tasks.exists():
+                user_progress_of_completed_tasks = user_completed_tasks.count() * 100 // user_tasks.count()
+
             setattr(request, 'codexrunner_user', user)
+            setattr(request, 'codexrunner_user_progress_of_completed_tasks', user_progress_of_completed_tasks)
+            setattr(request, 'codexrunner_user_tasks', user_tasks)
+            setattr(request, 'codexrunner_user_completed_tasks', user_completed_tasks)
             return function(*args, **kwargs)
 
         return redirect('login_view')
@@ -38,13 +47,13 @@ def authorization(function):
 def solving_the_task_view(request, category_name, task_name):
     """Страница решения задачи"""
     category = TaskCategory.objects.filter(slug=category_name).first()
-    task = get_object_or_404(Task, category=category, slug=task_name)
+    task = Task.objects.filter(category=category, slug=task_name).first()
     context = {
         'task': task,
         'category': category,
         'run_code_url': reverse('run_code'),
         'get_code_result_url': reverse('get_code_result'),
-        'timeout_refresh_result': task.timeout_refresh_result,
+        'timeout_refresh_result': getattr(task, 'timeout_refresh_result', 0),
     }
     return render(request, 'codexrunner/solving_task.html', context=context)
 
@@ -55,8 +64,8 @@ def categories_view(request):
     """Страница категорий задач"""
     context = {
         'categories': TaskCategory.objects.prefetch_related('task_set').filter(
-            task__in=request.codexrunner_user.tasks.all(),
-        ),
+            task__in=request.codexrunner_user_tasks,
+        ).distinct(),
     }
     return render(request, 'codexrunner/categories.html', context=context)
 
@@ -64,13 +73,15 @@ def categories_view(request):
 @require_GET
 @authorization
 def tasks_view(request, category_name):
-    """Страница задач"""
-    tasks = request.codexrunner_user.tasks.all()
-    category = TaskCategory.objects.prefetch_related('task_set').filter(task__in=tasks, slug=category_name).first()
-    context = {
-        'tasks': tasks,
-        'category': category,
-    }
+    """Страница задач по определенной категории"""
+    tasks = list(request.codexrunner_user.tasks.filter(category__slug=category_name))
+    context = {'tasks': [], 'category': None}
+    if tasks:
+        context = {
+            'tasks': tasks,
+            'category': tasks[0].category,
+        }
+
     return render(request, 'codexrunner/tasks.html', context=context)
 
 
@@ -80,7 +91,7 @@ def run_code(request):
     """Метод для запуска кода на прогон через раннер"""
     text_code = request.POST.get('text_code')
     if not text_code:
-        return JsonResponse(status=400, data={'message': 'Не код для запуска!'})
+        return JsonResponse(status=400, data={'message': 'Не найден код для запуска!'})
 
     task_name = request.POST.get('task_name')
     if not task_name:
@@ -115,7 +126,6 @@ def run_code(request):
             code=text_code,
         )
     except Exception as error:
-        print(error)
         return JsonResponse(status=400, data={'message': 'Неудалось запустить задачу в очереди!'})
 
     return JsonResponse(status=200, data={'job_id': job_id})
@@ -129,12 +139,20 @@ def get_code_result(request):
     if not job_id:
         return JsonResponse(status=400, data={'message': 'Не найден job_id!'})
 
+    user_run_task = UserRunTask.objects.filter(job_id=job_id).first()
+    if not user_run_task:
+        return JsonResponse(status=400, data={'message': 'Задача не была запущена!'})
+
     r_con = redis_connection()
     message_log = r_con.get(RESULT_JOB_ID.format(job_id))
     if not message_log:
         return JsonResponse(status=400, data={'message': 'Результат проверки не найден!'})
 
     data = json.loads(message_log)
+    if not any(data.values()):
+        request.codexrunner_user.completed_tasks.add(user_run_task)
+        request.codexrunner_user.save()
+
     return JsonResponse(status=200, data=data)
 
 
