@@ -63,3 +63,8 @@ urlpatterns = [
 ```
 
 And finally perform migrations.
+
+## Example
+
+![Uploading изображение.png…]()
+
