@@ -66,5 +66,5 @@ And finally perform migrations.
 
 ## Example
 
-![Uploading изображение.png…]()
+![Example](example.png)
 
