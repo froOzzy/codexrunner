@@ -61,3 +61,5 @@ urlpatterns = [
 ]
 
 ```
+
+And finally perform migrations.
