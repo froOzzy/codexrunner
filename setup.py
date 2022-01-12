@@ -22,7 +22,7 @@ setup(
     ],
     long_description=open(join(dirname(__file__), 'README.md')).read(),
     install_requires=[
-        'docker>=5.0.3',
+        'docker>=5.0.0',
         'Markdown>=3.3.4',
         'django-rq>=2.4.1',
     ],
