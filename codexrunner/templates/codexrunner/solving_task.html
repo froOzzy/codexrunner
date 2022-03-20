@@ -73,13 +73,16 @@
         $(document).ready(function() {
             $("#run-code").click(function(){
                 var button = $(this);
+                if (button.attr('finished')) {
+                    window.location.href = '../';
+                }
                 button.prop('disabled', true);
                 button.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>Проверка...');
                 $("#nav-cli-output").html('<div class="text-center"><div class="spinner-grow text-secondary" role="status"><span class="sr-only"></span></div></div>');
                 $("#nav-cli-output-tab").tab("show");
                 $.ajax({
                     type: 'POST',
-                    url: "{{ run_code_url }}",
+                    url: "{% url 'run_code' %}",
                     data: {
                         text_code: editor.getValue(),
                         task_name: "{{ task.slug }}",
@@ -90,15 +93,16 @@
                          setTimeout(function () {
                             $.ajax({
                                 type: 'GET',
-                                url: "{{ get_code_result_url }}",
+                                url: "{% url 'get_code_result' %}",
                                 data: {
                                     job_id: data.job_id,
                                     csrfmiddlewaretoken: $('input[name="csrfmiddlewaretoken"]').val()
                                 },
                                 dataType: 'json',
                                 success: function(data, textStatus, jqXHR) {
+                                    button.html('Завершить');
                                     button.prop('disabled', false);
-                                    button.html('Проверить');
+                                    button.attr('finished', true);
                                     var reponse_json = jQuery.parseJSON(jqXHR.responseText);
                                     $("#nav-cli-output").html('');
                                     $.each(reponse_json, function(key, value) {
@@ -121,7 +125,7 @@
                             });
                             button.prop('disabled', false);
                             button.html('Проверить');
-                         }, {{ timeout_refresh_result }} * 1000);
+                         }, {{ task.timeout_refresh_result }} * 1000);
                     },
                     error: function (jqXHR, exception) {
                         button.prop('disabled', false);
