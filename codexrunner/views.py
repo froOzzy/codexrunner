@@ -5,7 +5,6 @@ import hashlib
 from django.views.decorators.http import require_GET, require_POST
 from django.shortcuts import render, redirect, HttpResponse
 from django.http import JsonResponse
-from django.urls import reverse
 from django.core.cache import cache
 
 import django_rq
@@ -47,13 +46,7 @@ def solving_the_task_view(request, category_name, task_name):
     """Страница решения задачи"""
     category = TaskCategory.objects.filter(slug=category_name).first()
     task = Task.objects.filter(category=category, slug=task_name).first()
-    context = {
-        'task': task,
-        'category': category,
-        'run_code_url': reverse('run_code'),
-        'get_code_result_url': reverse('get_code_result'),
-        'timeout_refresh_result': getattr(task, 'timeout_refresh_result', 0),
-    }
+    context = {'task': task, 'category': category}
     return render(request, 'codexrunner/solving_task.html', context=context)
 
 
@@ -76,10 +69,7 @@ def tasks_view(request, category_name):
     tasks = list(request.codexrunner_user.tasks.filter(category__slug=category_name))
     context = {'tasks': [], 'category': None}
     if tasks:
-        context = {
-            'tasks': tasks,
-            'category': tasks[0].category,
-        }
+        context = {'tasks': tasks, 'category': tasks[0].category}
 
     return render(request, 'codexrunner/tasks.html', context=context)
 
@@ -148,7 +138,7 @@ def get_code_result(request):
         return JsonResponse(status=400, data={'message': 'Результат проверки не найден!'})
 
     data = json.loads(message_log)
-    if not any(data.values()) and request.codexrunner_user.completed_tasks.filter(pk=user_run_task.task.pk).exists():
+    if not any(data.values()):
         request.codexrunner_user.completed_tasks.add(user_run_task.task)
         request.codexrunner_user.save()
 
