@@ -1,10 +1,9 @@
 import uuid
-import time
 import json
 import hashlib
 
 from django.views.decorators.http import require_GET, require_POST
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, HttpResponse
 from django.http import JsonResponse
 from django.urls import reverse
 from django.core.cache import cache
@@ -125,7 +124,7 @@ def run_code(request):
             task=task,
             code=text_code,
         )
-    except Exception as error:
+    except Exception:
         return JsonResponse(status=400, data={'message': 'Неудалось запустить задачу в очереди!'})
 
     return JsonResponse(status=200, data={'job_id': job_id})
@@ -149,8 +148,8 @@ def get_code_result(request):
         return JsonResponse(status=400, data={'message': 'Результат проверки не найден!'})
 
     data = json.loads(message_log)
-    if not any(data.values()):
-        request.codexrunner_user.completed_tasks.add(user_run_task)
+    if not any(data.values()) and request.codexrunner_user.completed_tasks.filter(pk=user_run_task.task.pk).exists():
+        request.codexrunner_user.completed_tasks.add(user_run_task.task)
         request.codexrunner_user.save()
 
     return JsonResponse(status=200, data=data)

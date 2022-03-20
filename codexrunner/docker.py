@@ -1,13 +1,11 @@
 import tarfile
 import tempfile
 import time
-import inspect
 from io import BytesIO
 from multiprocessing.pool import ThreadPool
 from multiprocessing.context import TimeoutError as MultiprocessingTimeoutError
 
 import docker
-from django.core.cache import cache
 
 from codexrunner.settings import SETTINGS, RESULT_JOB_ID
 from codexrunner.redis_pool import redis_connection
